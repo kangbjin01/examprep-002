@@ -1,0 +1,13 @@
+# Local development overrides
+# This file is automatically merged with docker-compose.yml
+services:
+  app:
+    ports:
+      - "3002:3000"  # Avoid conflict with local dev server
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+
+  pocketbase:
+    ports:
+      - "8090:8090"  # Expose PocketBase admin locally
