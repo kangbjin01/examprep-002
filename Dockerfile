@@ -38,8 +38,7 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy PocketBase migrations + seed data
-COPY --from=builder /app/pocketbase/pb_migrations /pb/pb_migrations
+# Copy seed data (migrations already applied in seed DB, skip migration files)
 COPY --from=builder /app/pocketbase/pb_data /pb/pb_data_seed
 
 # Supervisor config to run both processes
@@ -50,7 +49,7 @@ nodaemon=true
 logfile=/var/log/supervisor/supervisord.log
 
 [program:pocketbase]
-command=/usr/local/bin/pocketbase serve --http=0.0.0.0:8090 --dir=/pb/pb_data --migrationsDir=/pb/pb_migrations
+command=/usr/local/bin/pocketbase serve --http=0.0.0.0:8090 --dir=/pb/pb_data --automigrate=false
 autostart=true
 autorestart=true
 stdout_logfile=/dev/stdout
