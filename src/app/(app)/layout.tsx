@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-store";
+import { useStats } from "@/lib/stats-store";
+import { fetchAllQuestions } from "@/lib/questions";
 import { pb } from "@/lib/pocketbase";
 
 const navItems = [
@@ -31,12 +33,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, logout, refresh } = useAuth();
 
+  const { loadFromPB } = useStats();
+
   useEffect(() => {
     refresh();
     if (!pb.authStore.isValid) {
       router.push("/login");
+      return;
     }
-  }, [refresh, router]);
+    // Load data from PocketBase
+    loadFromPB();
+    fetchAllQuestions();
+  }, [refresh, router, loadFromPB]);
 
   const handleLogout = () => {
     logout();

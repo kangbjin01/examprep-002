@@ -10,15 +10,21 @@ import { useStats } from "@/lib/stats-store";
 
 const examCards = [
   {
+    exam: "SAT",
+    description: "Reading & Writing — Multiple exam sets available",
+    href: "/practice",
+    sections: 1,
+  },
+  {
     exam: "SSAT",
     description: "Verbal Synonyms, Analogies, Reading Comprehension",
-    href: "/practice/ssat",
+    href: "/practice",
     sections: 3,
   },
   {
     exam: "ACT",
     description: "English Grammar, Rhetoric, Reading Comprehension",
-    href: "/practice/act",
+    href: "/practice",
     sections: 2,
   },
 ];

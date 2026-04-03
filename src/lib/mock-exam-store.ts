@@ -4,6 +4,9 @@ import type { Question } from "@/types";
 // SSAT: 40 min verbal, 40 min reading
 // ACT: 45 min english, 35 min reading
 const SECTION_TIMES: Record<string, Record<string, number>> = {
+  sat: {
+    "reading-writing": 64 * 60, // 32 min per module x 2
+  },
   ssat: {
     "verbal-synonyms": 15 * 60,
     "verbal-analogies": 15 * 60,

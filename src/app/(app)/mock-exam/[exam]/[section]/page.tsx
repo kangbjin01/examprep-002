@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useMockExam, getSectionTime } from "@/lib/mock-exam-store";
 import { useStats } from "@/lib/stats-store";
-import { getQuestions, getSectionName } from "@/lib/questions";
+import { fetchAllQuestions, getQuestions, getQuestionsByExamSet, getSectionName } from "@/lib/questions";
 import { MockExamView } from "@/components/mock-exam/mock-exam-view";
 import { ScoreReport } from "@/components/mock-exam/score-report";
 
 export default function MockExamSessionPage() {
   const params = useParams<{ exam: string; section: string }>();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { startExam, questions, answers, isFinished, reset } = useMockExam();
   const { addAttempt } = useStats();
@@ -19,15 +20,27 @@ export default function MockExamSessionPage() {
 
   const exam = params.exam;
   const section = params.section;
-  const sectionName = getSectionName(exam, section);
+  const examSet = searchParams.get("set");
+
+  const sectionName = examSet
+    ? `SAT — ${examSet.replace(/^sat-/, "").replace(/-/g, " ")}`
+    : getSectionName(exam, section);
 
   useEffect(() => {
-    const qs = getQuestions(exam, section);
+    fetchAllQuestions().then(() => {
+    let qs;
+    if (examSet) {
+      qs = getQuestionsByExamSet(examSet);
+    } else {
+      qs = getQuestions(exam, section);
+    }
     if (qs.length === 0) {
       router.push("/mock-exam");
       return;
     }
-    const totalTime = getSectionTime(exam, section);
+    const totalTime = examSet
+      ? Math.round(qs.length * 1.2) * 60 // ~1.2 min per question for SAT
+      : getSectionTime(exam, section);
     startExam(qs, totalTime);
     startTimeRef.current = Date.now();
     recordedRef.current = false;
@@ -35,16 +48,17 @@ export default function MockExamSessionPage() {
     return () => {
       reset();
     };
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exam, section]);
+  }, [exam, section, examSet]);
 
   const handleFinish = () => {
-    // Record attempts to stats
     if (!recordedRef.current) {
       recordedRef.current = true;
       const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
-      const currentQuestions = useMockExam.getState().questions;
-      const currentAnswers = useMockExam.getState().answers;
+      const state = useMockExam.getState();
+      const { questions: currentQuestions, answers: currentAnswers, eliminated, flagged } = state;
+      const mockSessionId = `mock-${Date.now()}`;
 
       currentQuestions.forEach((q, i) => {
         addAttempt({
@@ -54,8 +68,16 @@ export default function MockExamSessionPage() {
           type: q.type,
           difficulty: q.difficulty,
           isCorrect: currentAnswers[i] === q.answer,
+          selectedAnswer: currentAnswers[i] ?? -1,
           timeSpent: Math.round(timeSpent / currentQuestions.length),
           timestamp: Date.now(),
+          examSet: q.examSet || examSet || "",
+          mode: "mock",
+          sessionId: mockSessionId,
+          eliminated: eliminated[i] || [],
+          flagged: flagged.has(i),
+          solveOrder: i + 1,
+          revealed: false,
         });
       });
     }

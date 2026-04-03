@@ -1,12 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowRight, CheckCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { fetchAllQuestions, getExamSets, getQuestionsByExamSet } from "@/lib/questions";
 
-const exams = [
+const otherExams = [
   {
     id: "ssat",
     name: "SSAT",
@@ -53,7 +55,30 @@ const exams = [
   },
 ];
 
+function formatExamSetName(examSet: string): string {
+  return examSet
+    .replace(/^sat-/, "")
+    .replace(/-/g, " ")
+    .replace(/@/g, "@ ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function PracticePage() {
+  const [satSets, setSatSets] = useState<{ name: string; count: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAllQuestions().then(() => {
+      const sets = getExamSets("sat");
+      const withCounts = sets.map((s) => ({
+        name: s,
+        count: getQuestionsByExamSet(s).length,
+      }));
+      setSatSets(withCounts);
+      setLoading(false);
+    });
+  }, []);
+
   return (
     <div className="space-y-8">
       <div>
@@ -63,7 +88,56 @@ export default function PracticePage() {
         </p>
       </div>
 
-      {exams.map((exam) => (
+      {/* SAT */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold">SAT</h2>
+          <Badge variant="secondary" className="text-xs font-normal">
+            Scholastic Assessment Test
+          </Badge>
+          {satSets.length > 0 && (
+            <Badge variant="outline" className="text-xs font-mono">
+              {satSets.length} sets
+            </Badge>
+          )}
+        </div>
+
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading exam sets...</p>
+        ) : satSets.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No SAT questions available.</p>
+        ) : (
+          <div className="grid gap-3">
+            {satSets.map((set) => (
+              <Card key={set.name} className="shadow-none">
+                <CardContent className="flex items-center justify-between p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border">
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{formatExamSetName(set.name)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Reading & Writing &middot;{" "}
+                        <span className="font-mono">{set.count}</span> questions
+                      </p>
+                    </div>
+                  </div>
+                  <Link href={`/practice/sat/reading-writing/solve?set=${encodeURIComponent(set.name)}`}>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      Start
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* SSAT & ACT */}
+      {otherExams.map((exam) => (
         <div key={exam.id} className="space-y-4">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold">{exam.name}</h2>
@@ -84,16 +158,12 @@ export default function PracticePage() {
                       <p className="font-medium">{section.name}</p>
                       <p className="text-sm text-muted-foreground">
                         {section.description} &middot;{" "}
-                        <span className="font-mono">
-                          {section.questionCount}
-                        </span>{" "}
+                        <span className="font-mono">{section.questionCount}</span>{" "}
                         questions
                       </p>
                     </div>
                   </div>
-                  <Link
-                    href={`/practice/${exam.id}/${section.id}/solve`}
-                  >
+                  <Link href={`/practice/${exam.id}/${section.id}/solve`}>
                     <Button variant="outline" size="sm" className="gap-1.5">
                       Start
                       <ArrowRight className="h-3.5 w-3.5" />

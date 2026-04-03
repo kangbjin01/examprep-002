@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,12 +12,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { usePractice } from "@/lib/practice-store";
 import { useStats } from "@/lib/stats-store";
+import type { AnswerChange, ErrorType, InactivityEvent } from "@/lib/stats-store";
+import { splitPassageAndPrompt } from "@/lib/utils";
 import { SplitPane } from "./split-pane";
 import { ChoiceCard } from "./choice-card";
 import { QuestionNavigator } from "./question-navigator";
 import { HighlightablePassage } from "./highlightable-passage";
 import { LineReader } from "./line-reader";
 import type { Question } from "@/types";
+
+const ERROR_TYPE_OPTIONS: { value: ErrorType; label: string }[] = [
+  { value: "careless", label: "Careless mistake" },
+  { value: "misread_passage", label: "Misread the passage" },
+  { value: "vocabulary", label: "Didn't know the word" },
+  { value: "grammar_rule", label: "Didn't know the grammar rule" },
+  { value: "conceptual_gap", label: "Didn't understand the concept" },
+  { value: "time_pressure", label: "Rushed / time pressure" },
+  { value: "trap_answer", label: "Fell for a trap answer" },
+  { value: "overthinking", label: "Overthought it" },
+];
+
+const CONFIDENCE_LABELS = ["Guessing", "Not sure", "Somewhat sure", "Confident", "Certain"];
 
 interface PracticeViewProps {
   sectionName: string;
@@ -45,6 +60,64 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
   const [lineReaderActive, setLineReaderActive] = useState(false);
   const [startTime] = useState(() => Date.now());
 
+  // Confidence rating state (shown before reveal)
+  const [showConfidence, setShowConfidence] = useState(false);
+  const [confidence, setConfidence] = useState(0);
+
+  // Error type state (shown after wrong answer reveal)
+  const [showErrorPicker, setShowErrorPicker] = useState(false);
+  const [selectedErrorType, setSelectedErrorType] = useState<ErrorType>("");
+
+  // Data tracking refs
+  const answerChangesRef = useRef<Map<number, AnswerChange[]>>(new Map());
+  const firstInteractionRef = useRef<Map<number, number>>(new Map());
+  const choiceSelectionOrderRef = useRef<Map<number, { choice: number; timestamp: number }[]>>(new Map());
+  const choiceHoverStartRef = useRef<Map<string, number>>(new Map());
+  const choiceHoverTimesRef = useRef<Map<number, { A: number; B: number; C: number; D: number }>>(new Map());
+  const explanationRevealTimeRef = useRef<Map<number, number>>(new Map());
+  const lastActivityRef = useRef(Date.now());
+  const inactivityEventsRef = useRef<InactivityEvent[]>([]);
+  const pendingAttemptRef = useRef<Parameters<typeof addAttempt>[0] | null>(null);
+
+  // Inactivity detection (30s threshold)
+  useEffect(() => {
+    const THRESHOLD = 30000;
+    let inactiveStart: number | null = null;
+
+    const handleActivity = () => {
+      const now = Date.now();
+      if (inactiveStart && now - inactiveStart >= THRESHOLD) {
+        inactivityEventsRef.current.push({
+          start: inactiveStart,
+          end: now,
+          duration: now - inactiveStart,
+        });
+      }
+      inactiveStart = null;
+      lastActivityRef.current = now;
+    };
+
+    const checkInactivity = setInterval(() => {
+      const elapsed = Date.now() - lastActivityRef.current;
+      if (elapsed >= THRESHOLD && !inactiveStart) {
+        inactiveStart = lastActivityRef.current;
+      }
+    }, 5000);
+
+    window.addEventListener("mousemove", handleActivity);
+    window.addEventListener("keydown", handleActivity);
+    window.addEventListener("click", handleActivity);
+    window.addEventListener("scroll", handleActivity, true);
+
+    return () => {
+      clearInterval(checkInactivity);
+      window.removeEventListener("mousemove", handleActivity);
+      window.removeEventListener("keydown", handleActivity);
+      window.removeEventListener("click", handleActivity);
+      window.removeEventListener("scroll", handleActivity, true);
+    };
+  }, []);
+
   const question: Question | undefined = questions[currentIndex];
   if (!question) return null;
 
@@ -53,21 +126,129 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
   const flagged = isFlagged(currentIndex);
   const revealed = isRevealed(currentIndex);
   const bookmarked = isBookmarked(question.id);
-  const hasPassage = !!question.passage;
+  const isSAT = question.exam === "sat";
+  const { passageText, promptText } = splitPassageAndPrompt(question);
+  const hasPassage = isSAT || !!question.passage;
 
-  const handleReveal = () => {
+  // Track answer selection with changes and order
+  const handleSelectAnswer = useCallback(
+    (choiceIndex: number) => {
+      const prev = answers[currentIndex];
+
+      // Track answer changes
+      if (prev !== undefined && prev !== choiceIndex) {
+        const changes = answerChangesRef.current.get(currentIndex) || [];
+        changes.push({ from: prev, to: choiceIndex, timestamp: Date.now() });
+        answerChangesRef.current.set(currentIndex, changes);
+      }
+
+      // Track selection order
+      const order = choiceSelectionOrderRef.current.get(currentIndex) || [];
+      order.push({ choice: choiceIndex, timestamp: Date.now() });
+      choiceSelectionOrderRef.current.set(currentIndex, order);
+
+      // Track first interaction time (passage read time proxy)
+      if (!firstInteractionRef.current.has(currentIndex)) {
+        firstInteractionRef.current.set(currentIndex, Date.now() - startTime);
+      }
+
+      lastActivityRef.current = Date.now();
+      selectAnswer(choiceIndex);
+    },
+    [answers, currentIndex, selectAnswer, startTime]
+  );
+
+  // Track choice hover times
+  const handleChoiceHoverStart = useCallback(
+    (choiceIndex: number) => {
+      choiceHoverStartRef.current.set(`${currentIndex}-${choiceIndex}`, Date.now());
+    },
+    [currentIndex]
+  );
+
+  const handleChoiceHoverEnd = useCallback(
+    (choiceIndex: number) => {
+      const key = `${currentIndex}-${choiceIndex}`;
+      const start = choiceHoverStartRef.current.get(key);
+      if (start) {
+        const duration = Date.now() - start;
+        const times = choiceHoverTimesRef.current.get(currentIndex) || { A: 0, B: 0, C: 0, D: 0 };
+        const labels = ["A", "B", "C", "D"] as const;
+        times[labels[choiceIndex]] += duration;
+        choiceHoverTimesRef.current.set(currentIndex, times);
+        choiceHoverStartRef.current.delete(key);
+      }
+    },
+    [currentIndex]
+  );
+
+  // Step 1: Click "Check Answer" → show confidence picker
+  const handleCheckClick = () => {
+    setShowConfidence(true);
+    setConfidence(0);
+  };
+
+  // Step 2: Submit confidence → reveal answer
+  const handleConfidenceSubmit = () => {
+    setShowConfidence(false);
     revealAnswer();
+    explanationRevealTimeRef.current.set(currentIndex, Date.now());
+
+    const isCorrect = selectedAnswer === question.answer;
     const timeSpent = Math.round((Date.now() - startTime) / 1000);
-    addAttempt({
+
+    const attempt: Parameters<typeof addAttempt>[0] = {
       questionId: question.id,
       exam: question.exam,
       section: question.section,
       type: question.type,
       difficulty: question.difficulty,
-      isCorrect: selectedAnswer === question.answer,
+      isCorrect,
+      selectedAnswer: selectedAnswer ?? -1,
       timeSpent,
       timestamp: Date.now(),
-    });
+      examSet: question.examSet || "",
+      mode: "practice",
+      eliminated: eliminatedChoices,
+      flagged,
+      revealed: true,
+      answerChanges: answerChangesRef.current.get(currentIndex) || [],
+      passageReadTime: Math.round((firstInteractionRef.current.get(currentIndex) || 0) / 1000),
+      moduleNumber: question.type?.includes("m1") ? 1 : question.type?.includes("m2") ? 2 : 0,
+      selfRatedConfidence: confidence,
+      choiceHoverTimes: choiceHoverTimesRef.current.get(currentIndex),
+      choiceSelectionOrder: choiceSelectionOrderRef.current.get(currentIndex) || [],
+      inactivityEvents: inactivityEventsRef.current,
+    };
+
+    if (!isCorrect) {
+      // Show error type picker for wrong answers
+      pendingAttemptRef.current = attempt;
+      setShowErrorPicker(true);
+    } else {
+      addAttempt(attempt);
+    }
+  };
+
+  // Step 3: Submit error type (wrong answers only)
+  const handleErrorSubmit = (errorType: ErrorType) => {
+    setShowErrorPicker(false);
+    setSelectedErrorType(errorType);
+    if (pendingAttemptRef.current) {
+      addAttempt({
+        ...pendingAttemptRef.current,
+        errorType,
+      });
+      pendingAttemptRef.current = null;
+    }
+  };
+
+  const handleSkipError = () => {
+    setShowErrorPicker(false);
+    if (pendingAttemptRef.current) {
+      addAttempt(pendingAttemptRef.current);
+      pendingAttemptRef.current = null;
+    }
   };
 
   const handleToggleBookmark = () => {
@@ -110,7 +291,11 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <span className={`inline-block h-2 w-2 rounded-full ${flagged ? "bg-orange-500" : "bg-muted-foreground/40"}`} />
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${
+                flagged ? "bg-orange-500" : "bg-muted-foreground/40"
+              }`}
+            />
             {flagged ? "Flagged" : "Flag"}
           </button>
         </div>
@@ -118,25 +303,84 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
 
       {/* Question text */}
       <p className="text-base font-medium leading-relaxed">
-        {question.question}
+        {isSAT ? promptText || question.question : question.question}
       </p>
 
       {/* Choices */}
       <div className="space-y-2">
         {question.choices.map((choice, i) => (
-          <ChoiceCard
+          <div
             key={i}
-            index={i}
-            text={choice}
-            selected={selectedAnswer === i}
-            eliminated={eliminatedChoices.includes(i)}
-            revealed={revealed}
-            isCorrect={i === question.answer}
-            onSelect={() => selectAnswer(i)}
-            onEliminate={() => toggleEliminate(i)}
-          />
+            onMouseEnter={() => handleChoiceHoverStart(i)}
+            onMouseLeave={() => handleChoiceHoverEnd(i)}
+          >
+            <ChoiceCard
+              index={i}
+              text={choice}
+              selected={selectedAnswer === i}
+              eliminated={eliminatedChoices.includes(i)}
+              revealed={revealed}
+              isCorrect={i === question.answer}
+              onSelect={() => handleSelectAnswer(i)}
+              onEliminate={() => toggleEliminate(i)}
+            />
+          </div>
         ))}
       </div>
+
+      {/* Confidence picker (before reveal) */}
+      {showConfidence && (
+        <div className="rounded-lg border border-border bg-muted p-4 space-y-3">
+          <p className="text-sm font-medium">How confident are you?</p>
+          <div className="flex gap-1">
+            {CONFIDENCE_LABELS.map((label, i) => (
+              <button
+                key={i}
+                onClick={() => setConfidence(i + 1)}
+                className={`flex-1 rounded-md px-2 py-2 text-xs transition-colors ${
+                  confidence === i + 1
+                    ? "bg-foreground text-background"
+                    : "border border-border hover:bg-secondary"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <Button
+            size="sm"
+            onClick={handleConfidenceSubmit}
+            disabled={confidence === 0}
+            className="w-full"
+          >
+            Reveal Answer
+          </Button>
+        </div>
+      )}
+
+      {/* Error type picker (after wrong answer) */}
+      {showErrorPicker && (
+        <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 space-y-3">
+          <p className="text-sm font-medium">Why did you get it wrong?</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {ERROR_TYPE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleErrorSubmit(opt.value)}
+                className="rounded-md border border-border px-3 py-2 text-xs text-left hover:bg-secondary transition-colors"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={handleSkipError}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Skip
+          </button>
+        </div>
+      )}
 
       {/* Back / Next */}
       <div className="flex items-center justify-between pt-2">
@@ -151,11 +395,11 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
           Back
         </Button>
 
-        {!revealed && isAnswered(currentIndex) && (
+        {!revealed && !showConfidence && isAnswered(currentIndex) && (
           <Button
             variant="outline"
             size="sm"
-            onClick={handleReveal}
+            onClick={handleCheckClick}
             className="gap-2"
           >
             <Eye className="h-4 w-4" />
@@ -176,7 +420,7 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
       </div>
 
       {/* Explanation */}
-      {revealed && (
+      {revealed && !showErrorPicker && (
         <div className="rounded-lg border border-border bg-muted p-4">
           <p className="text-xs font-medium text-muted-foreground mb-1.5">
             Explanation
@@ -188,7 +432,10 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
   );
 
   const passageContent = (
-    <HighlightablePassage questionId={question.id} text={question.passage || ""} />
+    <HighlightablePassage
+      questionId={question.id}
+      text={isSAT ? passageText : question.passage || ""}
+    />
   );
 
   return (
@@ -200,7 +447,9 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
           <button
             onClick={() => setLineReaderActive(!lineReaderActive)}
             className={`flex items-center gap-1 rounded-md px-2 py-1 transition-colors ${
-              lineReaderActive ? "bg-foreground text-background" : "hover:text-foreground"
+              lineReaderActive
+                ? "bg-foreground text-background"
+                : "hover:text-foreground"
             }`}
             title="Line Reader"
           >

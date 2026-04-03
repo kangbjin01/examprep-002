@@ -33,6 +33,12 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# local dev overrides
+docker-compose.override.yml
+
+# data extraction
+data/sat-extract/
+
 # vercel
 .vercel
 

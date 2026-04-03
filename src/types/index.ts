@@ -1,4 +1,4 @@
-export type Exam = "ssat" | "act";
+export type Exam = "ssat" | "act" | "sat";
 
 export type Difficulty = "easy" | "medium" | "hard";
 
@@ -14,6 +14,8 @@ export interface Question {
   answer: number;
   explanation: string;
   tags: string[];
+  examSet?: string;
+  questionNumber?: number;
 }
 
 export interface Attempt {
@@ -49,7 +51,7 @@ export interface Class {
   id: string;
   teacher: string;
   name: string;
-  exam: Exam | "both";
+  exam: Exam | "both" | "all";
   description: string;
   inviteCode: string;
   isActive: boolean;

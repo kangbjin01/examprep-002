@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMockExam } from "@/lib/mock-exam-store";
+import { splitPassageAndPrompt } from "@/lib/utils";
 import { SplitPane } from "@/components/practice/split-pane";
 import { ChoiceCard } from "@/components/practice/choice-card";
 import { HighlightablePassage } from "@/components/practice/highlightable-passage";
@@ -46,7 +47,9 @@ export function MockExamView({ sectionName, onFinish }: MockExamViewProps) {
   const selectedAnswer = answers[currentIndex];
   const eliminatedChoices = eliminated[currentIndex] || [];
   const flagged = isFlagged(currentIndex);
-  const hasPassage = !!question.passage;
+  const isSAT = question.exam === "sat";
+  const { passageText, promptText } = splitPassageAndPrompt(question);
+  const hasPassage = isSAT || !!question.passage;
 
   const handleSubmit = () => {
     if (!confirming) {
@@ -89,7 +92,7 @@ export function MockExamView({ sectionName, onFinish }: MockExamViewProps) {
       </div>
 
       <p className="text-base font-medium leading-relaxed">
-        {question.question}
+        {isSAT ? (promptText || question.question) : question.question}
       </p>
 
       <div className="space-y-2">
@@ -134,7 +137,7 @@ export function MockExamView({ sectionName, onFinish }: MockExamViewProps) {
   );
 
   const passageContent = (
-    <HighlightablePassage questionId={question.id} text={question.passage || ""} />
+    <HighlightablePassage questionId={question.id} text={isSAT ? passageText : (question.passage || "")} />
   );
 
   return (

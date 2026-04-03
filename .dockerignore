@@ -2,3 +2,9 @@ node_modules
 .next
 .git
 *.md
+data/
+scripts/
+pocketbase/pb_data
+.env*
+docker-compose*.yml
+.DS_Store

@@ -14,13 +14,13 @@ export default function NewClassPage() {
   const router = useRouter();
   const { createClass } = useTeacher();
   const [name, setName] = useState("");
-  const [exam, setExam] = useState<"ssat" | "act" | "both">("both");
+  const [exam, setExam] = useState<"ssat" | "act" | "sat" | "both" | "all">("sat");
   const [description, setDescription] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    const cls = createClass(name.trim(), exam, description.trim());
+    const cls = await createClass(name.trim(), exam, description.trim());
     router.push(`/t/classes/${cls.id}`);
   };
 
@@ -54,8 +54,8 @@ export default function NewClassPage() {
 
             <div className="space-y-2">
               <Label>Exam Type</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["ssat", "act", "both"] as const).map((opt) => (
+              <div className="grid grid-cols-5 gap-2">
+                {(["sat", "ssat", "act", "both", "all"] as const).map((opt) => (
                   <button
                     key={opt}
                     type="button"
@@ -66,7 +66,7 @@ export default function NewClassPage() {
                         : "border-border hover:border-foreground/50"
                     }`}
                   >
-                    {opt === "both" ? "Both" : opt.toUpperCase()}
+                    {opt === "both" ? "SSAT+ACT" : opt === "all" ? "All" : opt.toUpperCase()}
                   </button>
                 ))}
               </div>

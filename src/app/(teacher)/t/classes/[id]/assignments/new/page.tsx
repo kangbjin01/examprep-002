@@ -35,10 +35,10 @@ export default function NewAssignmentPage() {
   const [questionCount, setQuestionCount] = useState(10);
   const [dueDate, setDueDate] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !dueDate) return;
-    createAssignment({
+    await createAssignment({
       classId: params.id,
       title: title.trim(),
       exam,

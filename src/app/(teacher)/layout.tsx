@@ -6,17 +6,20 @@ import { useEffect } from "react";
 import {
   LayoutDashboard,
   GraduationCap,
+  Users,
   Settings,
   LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-store";
+import { useTeacher } from "@/lib/teacher-store";
 import { pb } from "@/lib/pocketbase";
 
 const navItems = [
   { href: "/t/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/t/classes", label: "Classes", icon: GraduationCap },
+  { href: "/t/users", label: "Users", icon: Users },
   { href: "/t/settings", label: "Settings", icon: Settings },
 ];
 
@@ -24,6 +27,8 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, refresh, isTeacher } = useAuth();
+
+  const { loadFromPB } = useTeacher();
 
   useEffect(() => {
     refresh();
@@ -33,8 +38,10 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     }
     if (!isTeacher()) {
       router.push("/dashboard");
+      return;
     }
-  }, [refresh, router, isTeacher]);
+    loadFromPB();
+  }, [refresh, router, isTeacher, loadFromPB]);
 
   const handleLogout = () => {
     logout();

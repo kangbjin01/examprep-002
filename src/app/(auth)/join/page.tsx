@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle } from "lucide-react";
+import { pb } from "@/lib/pocketbase";
 
 export default function JoinClassPage() {
   const [code, setCode] = useState("");
   const [joined, setJoined] = useState(false);
+  const [className, setClassName] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -21,8 +24,49 @@ export default function JoinClassPage() {
       return;
     }
 
-    // MVP: Just show success. In production, validate against PocketBase.
-    setJoined(true);
+    if (!pb.authStore.isValid) {
+      setError("Please log in first.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Find class by invite code
+      const classes = await pb.collection("classes").getFullList({
+        filter: `inviteCode = "${code.trim()}" && isActive = true`,
+      });
+
+      if (classes.length === 0) {
+        setError("Invalid invite code. Please check and try again.");
+        return;
+      }
+
+      const cls = classes[0];
+
+      // Check if already a member
+      const existing = await pb.collection("class_members").getFullList({
+        filter: `class = "${cls.id}" && student = "${pb.authStore.record?.id}" && status = "active"`,
+      });
+
+      if (existing.length > 0) {
+        setError("You are already a member of this class.");
+        return;
+      }
+
+      // Join the class
+      await pb.collection("class_members").create({
+        class: cls.id,
+        student: pb.authStore.record?.id,
+        status: "active",
+      });
+
+      setClassName(cls.name);
+      setJoined(true);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,7 +89,8 @@ export default function JoinClassPage() {
             <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
             <p className="text-lg font-semibold">You&apos;re in!</p>
             <p className="text-sm text-muted-foreground">
-              You&apos;ve joined the class. Your teacher can now assign you practice sets.
+              You&apos;ve joined <span className="font-medium text-foreground">{className}</span>.
+              Your teacher can now assign you practice sets.
             </p>
             <Link href="/dashboard">
               <Button className="w-full">Go to Dashboard</Button>
@@ -68,8 +113,8 @@ export default function JoinClassPage() {
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
-            <Button type="submit" className="w-full">
-              Join Class
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Joining..." : "Join Class"}
             </Button>
           </form>
         )}
