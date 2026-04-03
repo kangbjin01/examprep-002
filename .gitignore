@@ -39,6 +39,11 @@ docker-compose.override.yml
 # data extraction
 data/sat-extract/
 
+# PocketBase WAL files (not the main db)
+pocketbase/pb_data/*-shm
+pocketbase/pb_data/*-wal
+pocketbase/pb_data/storage/
+
 # vercel
 .vercel
 

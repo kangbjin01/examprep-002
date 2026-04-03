@@ -38,8 +38,9 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy PocketBase migrations
+# Copy PocketBase migrations + seed data
 COPY --from=builder /app/pocketbase/pb_migrations /pb/pb_migrations
+COPY --from=builder /app/pocketbase/pb_data /pb/pb_data_seed
 
 # Supervisor config to run both processes
 RUN mkdir -p /var/log/supervisor
@@ -70,6 +71,9 @@ SUPERVISORCONF
 # PocketBase data volume
 VOLUME /pb/pb_data
 
+COPY --from=builder /app/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 3000
 
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["/entrypoint.sh"]
