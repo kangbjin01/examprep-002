@@ -13,9 +13,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ExamPrep - SSAT & ACT Practice",
+  title: "ExamPrep - SAT & ACT Practice",
   description:
-    "Master SSAT and ACT English with smart practice tests, instant feedback, and performance analytics.",
+    "Master the SAT and ACT with smart practice tests, instant feedback, and performance analytics.",
 };
 
 export default function RootLayout({

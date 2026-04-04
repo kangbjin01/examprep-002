@@ -12,9 +12,9 @@ const features = [
   },
   {
     icon: Target,
-    title: "SSAT & ACT Coverage",
+    title: "SAT & ACT Coverage",
     description:
-      "Verbal synonyms, analogies, reading comprehension, grammar, punctuation, and rhetoric questions.",
+      "Reading and Writing passages, vocabulary, grammar, punctuation, and rhetoric questions across multiple exam sets.",
   },
   {
     icon: BarChart3,
@@ -26,8 +26,12 @@ const features = [
 
 const examSections = [
   {
-    exam: "SSAT",
-    sections: ["Verbal - Synonyms", "Verbal - Analogies", "Reading Comprehension"],
+    exam: "SAT",
+    sections: [
+      "Reading & Writing - Module 1",
+      "Reading & Writing - Module 2",
+      "Vocabulary & Grammar",
+    ],
   },
   {
     exam: "ACT",
@@ -63,7 +67,7 @@ export default function LandingPage() {
       <section className="mx-auto max-w-5xl px-6 py-24 md:py-32">
         <div className="max-w-2xl">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-            Master SSAT & ACT
+            Master SAT & ACT
             <br />
             <span className="text-muted-foreground">English.</span>
           </h1>
@@ -209,13 +213,10 @@ export default function LandingPage() {
           <h2 className="text-2xl font-bold tracking-tight">
             Ready to start practicing?
           </h2>
-          <p className="mt-3 text-muted-foreground">
-            Free to get started. No credit card required.
-          </p>
           <div className="mt-8">
             <Link href="/signup">
               <Button size="lg" className="h-12 px-8 text-base">
-                Create Free Account
+                Create Account
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>

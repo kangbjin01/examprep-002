@@ -45,6 +45,33 @@ export interface MockExam {
   completedAt?: string;
 }
 
+export interface QuestionNote {
+  id: string;
+  user: string;
+  question: string;
+  content: string;
+  isTeacherNote: boolean;
+  created: string;
+  updated: string;
+  expand?: {
+    user?: { id: string; name: string; email: string; role?: string };
+  };
+}
+
+export interface ChoiceNote {
+  id: string;
+  user: string;
+  question: string;
+  choiceIndex: number;
+  content: string;
+  isTeacherNote: boolean;
+  created: string;
+  updated: string;
+  expand?: {
+    user?: { id: string; name: string; email: string; role?: string };
+  };
+}
+
 export type UserRole = "student" | "teacher";
 
 export interface Class {

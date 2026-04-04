@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { usePractice } from "@/lib/practice-store";
 import { useStats } from "@/lib/stats-store";
+import { useNotes } from "@/lib/notes-store";
 import type { AnswerChange, ErrorType, InactivityEvent } from "@/lib/stats-store";
 import { splitPassageAndPrompt } from "@/lib/utils";
 import { SplitPane } from "./split-pane";
@@ -19,6 +20,7 @@ import { ChoiceCard } from "./choice-card";
 import { QuestionNavigator } from "./question-navigator";
 import { HighlightablePassage } from "./highlightable-passage";
 import { LineReader } from "./line-reader";
+import { NoteEditor } from "./note-editor";
 import type { Question } from "@/types";
 
 const ERROR_TYPE_OPTIONS: { value: ErrorType; label: string }[] = [
@@ -56,8 +58,10 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
   } = usePractice();
 
   const { addAttempt, addBookmark, removeBookmark, isBookmarked } = useStats();
+  const { loadNotes } = useNotes();
   const [showNavigator, setShowNavigator] = useState(false);
   const [lineReaderActive, setLineReaderActive] = useState(false);
+  const [expandedChoiceNotes, setExpandedChoiceNotes] = useState<Set<number>>(new Set());
   const [startTime] = useState(() => Date.now());
 
   // Confidence rating state (shown before reveal)
@@ -119,6 +123,15 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
   }, []);
 
   const question: Question | undefined = questions[currentIndex];
+
+  // Load notes whenever current question changes
+  useEffect(() => {
+    if (question?.id) {
+      loadNotes(question.id);
+      setExpandedChoiceNotes(new Set());
+    }
+  }, [question?.id, loadNotes]);
+
   if (!question) return null;
 
   const selectedAnswer = answers[currentIndex];
@@ -324,6 +337,28 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
               onSelect={() => handleSelectAnswer(i)}
               onEliminate={() => toggleEliminate(i)}
             />
+            {revealed && (
+              <div className="mt-1.5">
+                <button
+                  onClick={() => {
+                    setExpandedChoiceNotes((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(i)) next.delete(i);
+                      else next.add(i);
+                      return next;
+                    });
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground px-2"
+                >
+                  {expandedChoiceNotes.has(i) ? "▼ 선택지 메모 접기" : "▶ 선택지 메모"}
+                </button>
+                {expandedChoiceNotes.has(i) && (
+                  <div className="mt-1.5 pl-2 border-l-2 border-border">
+                    <NoteEditor questionId={question.id} choiceIndex={i} compact />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -420,12 +455,19 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
       </div>
 
       {/* Explanation */}
-      {revealed && !showErrorPicker && (
+      {revealed && !showErrorPicker && question.explanation && (
         <div className="rounded-lg border border-border bg-muted p-4">
           <p className="text-xs font-medium text-muted-foreground mb-1.5">
             Explanation
           </p>
           <p className="text-sm leading-relaxed">{question.explanation}</p>
+        </div>
+      )}
+
+      {/* Question-level notes */}
+      {revealed && !showErrorPicker && (
+        <div className="rounded-lg border border-border p-4">
+          <NoteEditor questionId={question.id} />
         </div>
       )}
     </div>

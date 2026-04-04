@@ -8,34 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fetchAllQuestions, getExamSets, getQuestionsByExamSet } from "@/lib/questions";
 
-const otherMockExams = [
-  {
-    id: "ssat-verbal-synonyms",
-    exam: "SSAT",
-    section: "Verbal - Synonyms",
-    sectionSlug: "verbal-synonyms",
-    examSlug: "ssat",
-    time: "15 min",
-    questionCount: 5,
-  },
-  {
-    id: "ssat-verbal-analogies",
-    exam: "SSAT",
-    section: "Verbal - Analogies",
-    sectionSlug: "verbal-analogies",
-    examSlug: "ssat",
-    time: "15 min",
-    questionCount: 4,
-  },
-  {
-    id: "ssat-reading",
-    exam: "SSAT",
-    section: "Reading Comprehension",
-    sectionSlug: "reading",
-    examSlug: "ssat",
-    time: "40 min",
-    questionCount: 3,
-  },
+const actMockExams = [
   {
     id: "act-english",
     exam: "ACT",
@@ -129,11 +102,11 @@ export default function MockExamPage() {
         )}
       </div>
 
-      {/* SSAT & ACT */}
+      {/* ACT */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">SSAT & ACT</h2>
+        <h2 className="text-lg font-semibold">ACT</h2>
         <div className="grid gap-3">
-          {otherMockExams.map((exam) => (
+          {actMockExams.map((exam) => (
             <Card key={exam.id} className="shadow-none">
               <CardContent className="flex items-center justify-between p-5">
                 <div className="flex items-center gap-4">

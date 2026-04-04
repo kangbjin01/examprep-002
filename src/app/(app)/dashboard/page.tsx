@@ -16,12 +16,6 @@ const examCards = [
     sections: 1,
   },
   {
-    exam: "SSAT",
-    description: "Verbal Synonyms, Analogies, Reading Comprehension",
-    href: "/practice",
-    sections: 3,
-  },
-  {
     exam: "ACT",
     description: "English Grammar, Rhetoric, Reading Comprehension",
     href: "/practice",

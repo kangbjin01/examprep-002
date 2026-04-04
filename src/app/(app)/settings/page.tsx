@@ -38,25 +38,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-none">
-        <CardHeader>
-          <CardTitle className="text-base">Subscription</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Free Plan</p>
-              <p className="text-sm text-muted-foreground">
-                Access to all practice questions.
-              </p>
-            </div>
-            <Button variant="outline" size="sm" disabled>
-              Upgrade
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       <Separator />
 
       <div>

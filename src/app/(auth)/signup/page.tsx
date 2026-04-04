@@ -47,7 +47,7 @@ export default function SignupPage() {
             Create your account
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Start practicing SSAT & ACT for free.
+            Start practicing SAT & ACT today.
           </p>
         </div>
 
