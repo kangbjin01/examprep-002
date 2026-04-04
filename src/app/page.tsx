@@ -49,13 +49,8 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Log in
-              </Button>
-            </Link>
-            <Link href="/signup">
               <Button size="sm">
-                Get Started
+                Log in
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </Link>
@@ -77,9 +72,9 @@ export default function LandingPage() {
             progress.
           </p>
           <div className="mt-8 flex items-center gap-4">
-            <Link href="/signup">
+            <Link href="/login">
               <Button size="lg" className="h-12 px-8 text-base">
-                Start Practicing
+                Log in to Practice
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -214,9 +209,9 @@ export default function LandingPage() {
             Ready to start practicing?
           </h2>
           <div className="mt-8">
-            <Link href="/signup">
+            <Link href="/login">
               <Button size="lg" className="h-12 px-8 text-base">
-                Create Account
+                Log in
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
