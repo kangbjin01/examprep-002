@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useMockExam, getSectionTime } from "@/lib/mock-exam-store";
 import { useStats } from "@/lib/stats-store";
@@ -52,7 +52,7 @@ export default function MockExamSessionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exam, section, examSet]);
 
-  const handleFinish = () => {
+  const handleFinish = useCallback(() => {
     if (!recordedRef.current) {
       recordedRef.current = true;
       const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
@@ -82,7 +82,14 @@ export default function MockExamSessionPage() {
       });
     }
     setShowReport(true);
-  };
+  }, [addAttempt, examSet]);
+
+  // Auto-submit when time expires
+  useEffect(() => {
+    if (isFinished && !showReport) {
+      handleFinish();
+    }
+  }, [isFinished, showReport, handleFinish]);
 
   if (questions.length === 0) {
     return (

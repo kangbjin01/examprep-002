@@ -174,13 +174,21 @@ export function MockExamView({ sectionName, onFinish }: MockExamViewProps) {
       </div>
 
       {/* Bottom bar */}
-      <div className="flex items-center justify-center border-t border-border bg-background px-4 py-2.5">
+      <div className="flex items-center justify-between border-t border-border bg-background px-4 py-2.5">
         <button
           onClick={openReview}
-          className="rounded-md bg-foreground px-4 py-1.5 text-xs font-medium text-background transition-colors hover:bg-foreground/90"
+          className="rounded-md border border-border px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary"
         >
           Question {currentIndex + 1} of {questions.length}
         </button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setConfirming(true)}
+          className="gap-1.5 text-xs"
+        >
+          Submit Exam
+        </Button>
       </div>
 
       {/* Review screen overlay */}
