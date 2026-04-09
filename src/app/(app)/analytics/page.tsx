@@ -8,8 +8,7 @@ import { Target, BookOpen, TrendingUp, Clock } from "lucide-react";
 import { useStats } from "@/lib/stats-store";
 
 const sections = [
-  { exam: "ssat", section: "verbal", label: "SSAT Verbal" },
-  { exam: "ssat", section: "reading", label: "SSAT Reading" },
+  { exam: "sat", section: "reading-writing", label: "SAT Reading & Writing" },
   { exam: "act", section: "english", label: "ACT English" },
   { exam: "act", section: "reading", label: "ACT Reading" },
 ];

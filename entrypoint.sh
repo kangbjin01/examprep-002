@@ -2,7 +2,7 @@
 
 # Version file tracks which seed data is deployed
 # Bump SEED_VERSION when you update /pb/pb_data_seed to force a reseed
-SEED_VERSION="2026-04-09-v4"
+SEED_VERSION="2026-04-09-v5"
 VERSION_FILE="/pb/pb_data/.seed_version"
 
 CURRENT_VERSION=""
