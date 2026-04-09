@@ -16,7 +16,7 @@ RUN npm run build
 # Stage 2: Run everything in one container
 FROM node:20-alpine
 
-RUN apk add --no-cache ca-certificates wget unzip supervisor
+RUN apk add --no-cache ca-certificates wget unzip supervisor python3
 
 WORKDIR /app
 
