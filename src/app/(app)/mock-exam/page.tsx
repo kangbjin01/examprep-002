@@ -84,8 +84,7 @@ export default function MockExamPage() {
                         <p className="font-medium">{formatExamSetName(set.name)}</p>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {Math.round(set.count * 1.2)} min &middot;{" "}
-                        <span className="font-mono">{set.count}</span> questions
+                        <span className="font-mono">{set.count}</span> questions &middot; untimed
                       </p>
                     </div>
                   </div>
@@ -121,9 +120,8 @@ export default function MockExamPage() {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {exam.time} &middot;{" "}
                       <span className="font-mono">{exam.questionCount}</span>{" "}
-                      questions
+                      questions &middot; untimed
                     </p>
                   </div>
                 </div>

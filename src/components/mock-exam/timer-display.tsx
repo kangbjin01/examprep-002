@@ -4,21 +4,21 @@ import { Eye, EyeOff } from "lucide-react";
 import { useMockExam } from "@/lib/mock-exam-store";
 
 export function TimerDisplay() {
-  const { timeRemaining, timerVisible, toggleTimer } = useMockExam();
+  const { timeElapsed, timerVisible, toggleTimer } = useMockExam();
 
-  const minutes = Math.floor(timeRemaining / 60);
-  const seconds = timeRemaining % 60;
-  const isLow = timeRemaining <= 5 * 60;
+  const hours = Math.floor(timeElapsed / 3600);
+  const minutes = Math.floor((timeElapsed % 3600) / 60);
+  const seconds = timeElapsed % 60;
+
+  const display = hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+    : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 
   return (
     <div className="flex items-center gap-2">
       {timerVisible ? (
-        <span
-          className={`font-mono text-sm font-medium tabular-nums ${
-            isLow ? "text-red-500" : ""
-          }`}
-        >
-          {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+        <span className="font-mono text-sm font-medium tabular-nums">
+          {display}
         </span>
       ) : (
         <span className="text-sm text-muted-foreground">Timer hidden</span>

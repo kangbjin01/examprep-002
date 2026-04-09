@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useMockExam, getSectionTime } from "@/lib/mock-exam-store";
+import { useMockExam } from "@/lib/mock-exam-store";
 import { useStats } from "@/lib/stats-store";
 import { fetchAllQuestions, getQuestions, getQuestionsByExamSet, getSectionName } from "@/lib/questions";
 import { MockExamView } from "@/components/mock-exam/mock-exam-view";
@@ -38,10 +38,7 @@ export default function MockExamSessionPage() {
       router.push("/mock-exam");
       return;
     }
-    const totalTime = examSet
-      ? Math.round(qs.length * 1.2) * 60 // ~1.2 min per question for SAT
-      : getSectionTime(exam, section);
-    startExam(qs, totalTime);
+    startExam(qs);
     startTimeRef.current = Date.now();
     recordedRef.current = false;
 
@@ -84,7 +81,7 @@ export default function MockExamSessionPage() {
     setShowReport(true);
   }, [addAttempt, examSet]);
 
-  // Auto-submit when time expires
+  // Handle submission (from MockExamView submit button)
   useEffect(() => {
     if (isFinished && !showReport) {
       handleFinish();
@@ -100,13 +97,12 @@ export default function MockExamSessionPage() {
   }
 
   if (showReport) {
-    const timeUsed = Math.round((Date.now() - startTimeRef.current) / 1000);
     return (
       <ScoreReport
         questions={questions}
         answers={answers}
         sectionName={sectionName}
-        timeUsed={timeUsed}
+        timeUsed={useMockExam.getState().timeElapsed}
       />
     );
   }

@@ -1,27 +1,6 @@
 import { create } from "zustand";
 import type { Question } from "@/types";
 
-// SSAT: 40 min verbal, 40 min reading
-// ACT: 45 min english, 35 min reading
-const SECTION_TIMES: Record<string, Record<string, number>> = {
-  sat: {
-    "reading-writing": 64 * 60, // 32 min per module x 2
-  },
-  ssat: {
-    "verbal-synonyms": 15 * 60,
-    "verbal-analogies": 15 * 60,
-    reading: 40 * 60,
-  },
-  act: {
-    english: 45 * 60,
-    reading: 35 * 60,
-  },
-};
-
-export function getSectionTime(exam: string, section: string): number {
-  return SECTION_TIMES[exam]?.[section] ?? 30 * 60;
-}
-
 interface MockExamState {
   questions: Question[];
   currentIndex: number;
@@ -29,8 +8,8 @@ interface MockExamState {
   eliminated: Record<number, number[]>;
   flagged: Set<number>;
 
-  // Timer
-  timeRemaining: number; // seconds
+  // Timer (stopwatch — counts up)
+  timeElapsed: number; // seconds
   timerVisible: boolean;
   timerInterval: ReturnType<typeof setInterval> | null;
   isFinished: boolean;
@@ -39,7 +18,7 @@ interface MockExamState {
   showReview: boolean;
 
   // Actions
-  startExam: (questions: Question[], totalTime: number) => void;
+  startExam: (questions: Question[]) => void;
   goTo: (index: number) => void;
   goNext: () => void;
   goBack: () => void;
@@ -67,13 +46,13 @@ export const useMockExam = create<MockExamState>((set, get) => ({
   answers: {},
   eliminated: {},
   flagged: new Set(),
-  timeRemaining: 0,
+  timeElapsed: 0,
   timerVisible: true,
   timerInterval: null,
   isFinished: false,
   showReview: false,
 
-  startExam: (questions, totalTime) => {
+  startExam: (questions) => {
     const prev = get().timerInterval;
     if (prev) clearInterval(prev);
 
@@ -87,7 +66,7 @@ export const useMockExam = create<MockExamState>((set, get) => ({
       answers: {},
       eliminated: {},
       flagged: new Set(),
-      timeRemaining: totalTime,
+      timeElapsed: 0,
       timerVisible: true,
       timerInterval: interval,
       isFinished: false,
@@ -96,17 +75,7 @@ export const useMockExam = create<MockExamState>((set, get) => ({
   },
 
   tick: () => {
-    const { timeRemaining, timerInterval } = get();
-    if (timeRemaining <= 1) {
-      if (timerInterval) clearInterval(timerInterval);
-      set({ timeRemaining: 0, timerInterval: null, isFinished: true, showReview: true, timerVisible: true });
-    } else {
-      // Show timer when 5 minutes remaining
-      if (timeRemaining === 5 * 60 + 1) {
-        set({ timerVisible: true });
-      }
-      set({ timeRemaining: timeRemaining - 1 });
-    }
+    set((s) => ({ timeElapsed: s.timeElapsed + 1 }));
   },
 
   goTo: (index) => {
@@ -174,7 +143,7 @@ export const useMockExam = create<MockExamState>((set, get) => ({
       answers: {},
       eliminated: {},
       flagged: new Set(),
-      timeRemaining: 0,
+      timeElapsed: 0,
       timerVisible: true,
       timerInterval: null,
       isFinished: false,
