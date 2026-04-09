@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, ScanLine } from "lucide
 import { Button } from "@/components/ui/button";
 import { useMockExam } from "@/lib/mock-exam-store";
 import { splitPassageAndPrompt } from "@/lib/utils";
+import { FormattedText } from "@/components/practice/formatted-text";
 import { SplitPane } from "@/components/practice/split-pane";
 import { ChoiceCard } from "@/components/practice/choice-card";
 import { HighlightablePassage } from "@/components/practice/highlightable-passage";
@@ -92,7 +93,7 @@ export function MockExamView({ sectionName, onFinish }: MockExamViewProps) {
       </div>
 
       <p className="text-base font-medium leading-relaxed">
-        {isSAT ? (promptText || question.question) : question.question}
+        <FormattedText text={isSAT ? (promptText || question.question) : question.question} />
       </p>
 
       <div className="space-y-2">

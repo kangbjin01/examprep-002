@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { MessageSquare, Trash2 } from "lucide-react";
 import { useHighlights, type Highlight } from "@/lib/highlight-store";
 import { HighlightToolbar } from "./highlight-toolbar";
+import { FormattedText } from "./formatted-text";
 
 const COLOR_CLASSES: Record<number, string> = {
   1: "bg-yellow-200/60 dark:bg-yellow-900/40",
@@ -93,7 +94,7 @@ export function HighlightablePassage({
   // Render text with highlights applied
   const renderHighlightedText = () => {
     if (highlights.length === 0) {
-      return <span>{text}</span>;
+      return <FormattedText text={text} />;
     }
 
     // Sort highlights by startOffset
@@ -111,7 +112,7 @@ export function HighlightablePassage({
       // Text before highlight
       if (hl.startOffset > cursor) {
         parts.push(
-          <span key={`t-${cursor}`}>{text.slice(cursor, hl.startOffset)}</span>
+          <FormattedText key={`t-${cursor}`} text={text.slice(cursor, hl.startOffset)} />
         );
       }
 
@@ -122,7 +123,7 @@ export function HighlightablePassage({
           className={`${COLOR_CLASSES[hl.color]} rounded-sm cursor-pointer relative group`}
           onClick={() => setActiveNote(activeNote === hl.id ? null : hl.id)}
         >
-          {text.slice(hl.startOffset, hl.endOffset)}
+          <FormattedText text={text.slice(hl.startOffset, hl.endOffset)} />
           {hl.note && (
             <MessageSquare className="inline-block ml-0.5 h-3 w-3 text-muted-foreground" />
           )}
@@ -157,7 +158,7 @@ export function HighlightablePassage({
 
     // Remaining text
     if (cursor < text.length) {
-      parts.push(<span key={`t-${cursor}`}>{text.slice(cursor)}</span>);
+      parts.push(<FormattedText key={`t-${cursor}`} text={text.slice(cursor)} />);
     }
 
     return <>{parts}</>;

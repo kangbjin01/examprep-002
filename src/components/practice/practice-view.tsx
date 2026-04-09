@@ -21,6 +21,7 @@ import { QuestionNavigator } from "./question-navigator";
 import { HighlightablePassage } from "./highlightable-passage";
 import { LineReader } from "./line-reader";
 import { NoteEditor } from "./note-editor";
+import { FormattedText } from "./formatted-text";
 import type { Question } from "@/types";
 
 const ERROR_TYPE_OPTIONS: { value: ErrorType; label: string }[] = [
@@ -316,7 +317,7 @@ export function PracticeView({ sectionName }: PracticeViewProps) {
 
       {/* Question text */}
       <p className="text-base font-medium leading-relaxed">
-        {isSAT ? promptText || question.question : question.question}
+        <FormattedText text={isSAT ? promptText || question.question : question.question} />
       </p>
 
       {/* Choices */}
